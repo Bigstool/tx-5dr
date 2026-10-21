@@ -1,10 +1,6 @@
 name: Build and Release Electron App
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
     inputs:
       version:
@@ -26,16 +22,6 @@ jobs:
             platform: win32
             arch: x64
             artifact_name: tx-5dr-windows-x64
-
-          - os: macos-latest
-            platform: darwin
-            arch: arm64
-            artifact_name: tx-5dr-macos-arm64
-
-          - os: macos-15-intel
-            platform: darwin
-            arch: x64
-            artifact_name: tx-5dr-macos-x64
 
           - os: ubuntu-latest
             platform: linux
@@ -1012,10 +998,8 @@ jobs:
             --commit "${{ steps.release_info.outputs.short_sha }}" \
             --commit-title "${{ steps.release_info.outputs.commit_title }}" \
             --published-at "${{ steps.release_info.outputs.timestamp }}" \
-            --base-url "${{ secrets.OSS_BASE_URL }}" \
-            --object-prefix "tx-5dr/app/${{ steps.release_info.outputs.tag }}" \
-            --oss-base-url "${{ secrets.OSS_BASE_URL }}" \
-            --oss-object-prefix "tx-5dr/app/${{ steps.release_info.outputs.tag }}" \
+            --base-url "https://github.com/${{ github.repository }}/releases/download" \
+            --object-prefix "${{ steps.release_info.outputs.tag }}" \
             --github-base-url "https://github.com/${{ github.repository }}/releases/download" \
             --github-object-prefix "${{ steps.release_info.outputs.tag }}" \
             --assets-dir "publish-assets" \
@@ -1043,18 +1027,12 @@ jobs:
           if (!Array.isArray(manifest.assets) || manifest.assets.length === 0) {
             throw new Error('app manifest missing assets');
           }
-          const hasMacArmDmg = manifest.assets.some((asset) => asset.platform === 'macos' && asset.arch === 'arm64' && asset.package_type === 'dmg' && asset.url_cn && asset.url_global);
-          if (!hasMacArmDmg) throw new Error('app manifest missing macOS arm64 dmg with dual urls');
           const forbiddenMsi = manifest.assets.find((asset) => asset.package_type === 'msi' || asset.name.endsWith('.msi'));
           if (forbiddenMsi) throw new Error(`app manifest must not include MSI asset: ${forbiddenMsi.name}`);
           const requiredAssets = [
             ['windows', 'x64', 'exe'],
             ['windows', 'x64', 'zip'],
             ['windows', 'x64', '7z'],
-            ['macos', 'arm64', 'dmg'],
-            ['macos', 'arm64', 'zip'],
-            ['macos', 'x64', 'dmg'],
-            ['macos', 'x64', 'zip'],
             ['linux', 'x64', 'AppImage'],
             ['linux', 'x64', 'deb'],
             ['linux', 'x64', 'rpm'],
@@ -1111,14 +1089,6 @@ jobs:
             - [**7z Archive**](https://github.com/${{ github.repository }}/releases/download/nightly-app/TX-5DR-nightly-windows-x64.7z) （压缩包，推荐）— LZMA2 compression, ~100MB smaller than ZIP, requires [7-Zip](https://www.7-zip.org/)
             - [**ZIP Archive**](https://github.com/${{ github.repository }}/releases/download/nightly-app/TX-5DR-nightly-windows-x64.zip) （压缩包）— larger file size
 
-            #### macOS (ARM64 — Apple Silicon)
-            - [**DMG Installer**](https://github.com/${{ github.repository }}/releases/download/nightly-app/TX-5DR-nightly-macos-arm64.dmg) （安装包）— recommended
-            - [**ZIP Archive**](https://github.com/${{ github.repository }}/releases/download/nightly-app/TX-5DR-nightly-macos-arm64.zip) （压缩包）
-
-            #### macOS (x64 — Intel)
-            - [**DMG Installer**](https://github.com/${{ github.repository }}/releases/download/nightly-app/TX-5DR-nightly-macos-x64.dmg) （安装包）— recommended
-            - [**ZIP Archive**](https://github.com/${{ github.repository }}/releases/download/nightly-app/TX-5DR-nightly-macos-x64.zip) （压缩包）
-
             #### Linux Desktop (x64) — Electron App
             - [**DEB Package**](https://github.com/${{ github.repository }}/releases/download/nightly-app/TX-5DR-nightly-linux-x64.deb) (Ubuntu/Debian)
             - [**RPM Package**](https://github.com/${{ github.repository }}/releases/download/nightly-app/TX-5DR-nightly-linux-x64.rpm) (Fedora/RHEL)
@@ -1140,7 +1110,7 @@ jobs:
 
             ### 🔧 System Requirements 系统要求
             - Node.js >= 22.15.1 (bundled / 已内置)
-            - Windows 10+ / macOS 11+ / Ubuntu 20.04+ / Fedora 35+
+            - Windows 10+ / Ubuntu 20.04+ / Fedora 35+
           allowUpdates: true
           removeArtifacts: true
           artifacts: "release-assets/*"
@@ -1171,14 +1141,6 @@ jobs:
             - [**7z Archive**](https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/TX-5DR-${{ github.event.inputs.version }}-windows-x64.7z) （压缩包，推荐）— LZMA2 compression, ~100MB smaller than ZIP, requires [7-Zip](https://www.7-zip.org/)
             - [**ZIP Archive**](https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/TX-5DR-${{ github.event.inputs.version }}-windows-x64.zip) （压缩包）— larger file size
 
-            #### macOS (ARM64 — Apple Silicon)
-            - [**DMG Installer**](https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/TX-5DR-${{ github.event.inputs.version }}-macos-arm64.dmg) （安装包）— recommended
-            - [**ZIP Archive**](https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/TX-5DR-${{ github.event.inputs.version }}-macos-arm64.zip) （压缩包）
-
-            #### macOS (x64 — Intel)
-            - [**DMG Installer**](https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/TX-5DR-${{ github.event.inputs.version }}-macos-x64.dmg) （安装包）— recommended
-            - [**ZIP Archive**](https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/TX-5DR-${{ github.event.inputs.version }}-macos-x64.zip) （压缩包）
-
             #### Linux Desktop (x64) — Electron App
             - [**DEB Package**](https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/TX-5DR-${{ github.event.inputs.version }}-linux-x64.deb) (Ubuntu/Debian)
             - [**RPM Package**](https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/TX-5DR-${{ github.event.inputs.version }}-linux-x64.rpm) (Fedora/RHEL)
@@ -1193,7 +1155,7 @@ jobs:
 
             ### 🔧 System Requirements 系统要求
             - Node.js >= 22.15.1 (bundled / 已内置)
-            - Windows 10+ / macOS 11+ / Ubuntu 20.04+ / Fedora 35+
+            - Windows 10+ / Ubuntu 20.04+ / Fedora 35+
 
             ---
             Built at （构建于）: ${{ steps.release_info.outputs.timestamp }}
